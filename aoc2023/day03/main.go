@@ -27,7 +27,7 @@ func main() {
 func solveGearRatios(ratios map[point][]int) string {
 	sum := 0
 	for _, v := range ratios {
-		if len(v) == 1 {
+		if len(v) != 2 {
 			continue
 		}
 		m := 1
