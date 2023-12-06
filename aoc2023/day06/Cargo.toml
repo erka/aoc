@@ -8,6 +8,7 @@ edition = "2021"
 [dependencies]
 miette = "5.10.0"
 nom = "7.1.3"
+nom-supreme = "0.8.0"
 
 [[bin]]
 name = "day06"

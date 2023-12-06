@@ -1,20 +1,20 @@
 // use std::collections::BTreeMap;
 
 use nom::{
-    bytes::complete::tag,
-    character::complete::{self, space0},
-    multi::fold_many1,
-    sequence::{preceded, terminated, tuple},
-    IResult,
+    bytes::complete::is_not,
+    character::complete::{self, digit1, line_ending, space1},
+    multi::separated_list1,
+    sequence::separated_pair,
+    IResult, Parser,
 };
+use nom_supreme::ParserExt;
 #[derive(Debug, PartialEq)]
-// struct Race<'a> {
+
 struct Race {
     time: u64,
     distance: u64,
 }
 
-// impl<'a> Race<'a> {
 impl Race {
     fn ways_to_win(&self) -> u64 {
         (1..self.time)
@@ -25,20 +25,13 @@ impl Race {
 }
 
 fn nums(input: &str) -> IResult<&str, Vec<u64>> {
-    fold_many1(
-        terminated(complete::u64, space0),
-        Vec::new,
-        |mut acc: Vec<_>, item| {
-            acc.push(item);
-            acc
-        },
-    )(input)
+    is_not("1234567890")
+        .precedes(separated_list1(space1, complete::u64))
+        .parse(input)
 }
 
 fn scoreboard(input: &str) -> IResult<&str, Vec<Race>> {
-    let (input, times) = preceded(tuple((tag("Time:"), space0)), nums)(input)?;
-    let input = &(input[1..input.len()]);
-    let (input, distances) = preceded(tuple((tag("Distance:"), space0)), nums)(input)?;
+    let (input, (times, distances)) = separated_pair(nums, line_ending, nums)(input)?;
 
     let races = times
         .iter()
@@ -56,16 +49,28 @@ fn process_part1(input: &str) -> String {
     let r = races.into_iter().fold(1, |acc, r| acc * r.ways_to_win());
     r.to_string()
 }
-
-fn process_part2(time: u64, distance: u64) -> String {
-    Race { time, distance }.ways_to_win().to_string()
+fn nums2(input: &str) -> IResult<&str, u64> {
+    is_not("1234567890")
+        .precedes(separated_list1(space1, digit1))
+        .map(|list| list.join("").parse::<u64>().expect("valid number"))
+        .parse(input)
 }
+fn scoreboard2(input: &str) -> IResult<&str, Race> {
+    let (input, (time, distance)) = separated_pair(nums2, line_ending, nums2)(input)?;
+    Ok((input, Race { time, distance }))
+}
+
+fn process_part2(input: &str) -> String {
+    let (_, race) = scoreboard2(&input).expect("should parse");
+    race.ways_to_win().to_string()
+}
+
 fn main() {
     let input = include_str!("./input.txt");
     println!(
         "part1: {}\npart2: {}",
         process_part1(input),
-        process_part2(53897698, 313109012141201)
+        process_part2(input)
     );
 }
 
@@ -81,7 +86,8 @@ mod tests {
     }
     #[test]
     fn test_power() -> miette::Result<()> {
-        assert_eq!("71503", process_part2(71530, 940200));
+        let input = include_str!("./example.txt");
+        assert_eq!("71503", process_part2(input));
         Ok(())
     }
 }
