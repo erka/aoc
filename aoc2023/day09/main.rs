@@ -21,17 +21,11 @@ fn records(input: &str) -> IResult<&str, Vec<Vec<i32>>> {
 }
 
 fn prediction(values: Vec<i32>) -> i32 {
-    let end = values.len() - 1;
-    let mut news = Vec::new();
-    let mut zeros = true;
-    for i in 0..end {
-        news.insert(i, values[i + 1] - values[i]);
-        zeros = zeros && (values[i + 1] - values[i] == 0)
+    if values.iter().all(|&n| n == 0) {
+        return 0;
     }
-    if zeros {
-        return values[end];
-    }
-    values[end] + prediction(news)
+    let steps = values.windows(2).map(|w| w[1] - w[0]).collect();
+    values.last().unwrap() + prediction(steps)
 }
 
 fn process_part1(input: &str) -> String {
