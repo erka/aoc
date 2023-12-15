@@ -4,10 +4,11 @@ import (
 	"bufio"
 	"bytes"
 	_ "embed"
-	"fmt"
 	"slices"
 	"strconv"
 	"strings"
+
+	"github.com/erka/aoc/pkg/log"
 
 	"github.com/samber/lo"
 )
@@ -17,11 +18,11 @@ var input []byte
 
 /*
 * part1: 511498
-* part2: 284674
+* part2: 284674q
  */
 func main() {
-	fmt.Printf("part1: %s\n", solvePart1(input))
-	fmt.Printf("part2: %s\n", solvePart2(input))
+	log.Infof("part1: %s", solvePart1(input))
+	log.Infof("part2: %s", solvePart2(input))
 }
 
 func hashAlg(s string) int {
@@ -98,17 +99,15 @@ func solvePart2(input []byte) string {
 		idx := strings.IndexAny(cmd, "-=")
 		label := cmd[:idx]
 		boxId := hashAlg(label)
-		box, ok := boxes[boxId]
-		if !ok {
-			box = newBox(boxId)
-			boxes[boxId] = box
+		if _, ok := boxes[boxId]; !ok {
+			boxes[boxId] = newBox(boxId)
 		}
 		switch cmd[idx] {
 		case '=':
 			focal_length := int(cmd[idx+1] - '0')
-			box.putLens(label, focal_length)
+			boxes[boxId].putLens(label, focal_length)
 		case '-':
-			box.deleteLens(label)
+			boxes[boxId].deleteLens(label)
 		}
 	}
 	sum := 0

@@ -4,8 +4,9 @@ import (
 	"bufio"
 	"bytes"
 	_ "embed"
-	"fmt"
 	"strconv"
+
+	"github.com/erka/aoc/pkg/log"
 )
 
 //go:embed input.txt
@@ -16,8 +17,8 @@ var input []byte
 * part 2:
  */
 func main() {
-	fmt.Printf("part1: %s\n", solvePart1(input))
-	fmt.Printf("part2: %s\n", solvePart2(input))
+	log.Infof("part1: %s", solvePart1(input))
+	log.Infof("part2: %s", solvePart2(input))
 }
 
 // solve
@@ -26,10 +27,11 @@ func solvePart1(input []byte) string {
 
 	for scanner.Scan() {
 		line := scanner.Text()
-		fmt.Println(line)
+		log.Debug(line)
 	}
 	if err := scanner.Err(); err != nil {
-		return err.Error()
+		log.Errorf("failed to read input: %v", err)
+		return ""
 	}
 	return strconv.Itoa(0)
 }
@@ -39,7 +41,7 @@ func solvePart2(input []byte) string {
 	scanner := bufio.NewScanner(bytes.NewBuffer(input))
 	for scanner.Scan() {
 		line := scanner.Text()
-		fmt.Println(line)
+		log.Debug(line)
 	}
 	if err := scanner.Err(); err != nil {
 		return err.Error()

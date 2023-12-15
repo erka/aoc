@@ -19,16 +19,15 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_process() -> miette::Result<()> {
+    fn test_process_part1() -> miette::Result<()> {
         let input = include_str!("./example.txt");
         assert_eq!("0", process_part1(input));
         Ok(())
     }
     #[test]
-    fn test_power() -> miette::Result<()> {
+    fn test_process_part2() -> miette::Result<()> {
         let input = include_str!("./example.txt");
         assert_eq!("0", process_part2(input));
         Ok(())
     }
 }
-
