@@ -1,0 +1,2 @@
+create day:
+    cargo generate --path ../starter --name {{day}}

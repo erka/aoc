@@ -1,5 +1,5 @@
 [package]
-name = "day00"
+name = "{{project-name}}"
 version = "0.1.0"
 edition = "2021"
 
@@ -10,5 +10,5 @@ miette = "5.10.0"
 nom = "7.1.3"
 
 [[bin]]
-name = "day00"
+name = "{{project-name}}"
 path = "main.rs"
