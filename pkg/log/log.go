@@ -69,13 +69,13 @@ func Debugf(template string, args ...any) {
 	DefaultLogger().Debugf(template, args...)
 }
 func Info(args ...any) {
-	DefaultLogger().Debug(args...)
+	DefaultLogger().Info(args...)
 }
 func Infof(template string, args ...any) {
 	DefaultLogger().Infof(template, args...)
 }
 func Error(args ...any) {
-	DefaultLogger().Debug(args...)
+	DefaultLogger().Error(args...)
 }
 func Errorf(template string, args ...any) {
 	DefaultLogger().Errorf(template, args...)
