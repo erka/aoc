@@ -3,7 +3,6 @@ package main
 import (
 	_ "embed"
 	"errors"
-	"image"
 	"strconv"
 	"strings"
 
@@ -15,8 +14,8 @@ import (
 var input []byte
 
 /*
-* part 1:
-* part 2:
+* part 1: 376008
+* part 2: 124078207789312
  */
 func main() {
 	log.Infof("part1: %s", solvePart1(input))
@@ -42,19 +41,19 @@ func (p Part) Value(v string) int {
 	return 0
 }
 
-func (p Part) Evaluate(ruleSet map[string]Workflow) string {
-	rule := ruleSet["in"]
+func (p Part) Evaluate(workflows map[string]Workflow) string {
+	workflow := workflows["in"]
 	for {
 	out:
-		for _, op := range rule {
-			next := op.next
-			switch op.eq {
+		for _, rule := range workflow {
+			next := rule.next
+			switch rule.op {
 			case ">":
-				if !(p.Value(op.variable) > op.value) {
+				if !(p.Value(rule.variable) > rule.value) {
 					continue
 				}
 			case "<":
-				if !(p.Value(op.variable) < op.value) {
+				if !(p.Value(rule.variable) < rule.value) {
 					continue
 				}
 			}
@@ -62,7 +61,7 @@ func (p Part) Evaluate(ruleSet map[string]Workflow) string {
 			case "A", "R":
 				return next
 			default:
-				rule = ruleSet[next]
+				workflow = workflows[next]
 				break out
 			}
 		}
@@ -82,25 +81,33 @@ func (p *Part) UnmarshalText(line string) error {
 	return nil
 }
 
-type Op struct {
+type Rule struct {
 	variable string
-	eq       string
+	op       string
 	value    int
 	next     string
 }
 
-type Workflow []Op
+type Workflow []Rule
 
-func newRule(line string) (string, []Op) {
+type Range struct {
+	Min, Max int
+}
+
+func (r Range) Len() int {
+	return r.Max - r.Min + 1
+}
+
+func newWorkflow(line string) (string, Workflow) {
 	i := strings.Index(line, "{")
 	name := line[:i]
 	lines := strings.FieldsFunc(line[i+1:len(line)-1], func(r rune) bool { return r == ',' })
-	ops := make(Workflow, 0)
+	workflow := make(Workflow, 0)
 	for _, r := range lines {
 		semi := strings.Index(r, ":")
-		var op Op
+		var rule Rule
 		if semi == -1 {
-			op = Op{
+			rule = Rule{
 				next: r,
 			}
 		} else {
@@ -108,23 +115,23 @@ func newRule(line string) (string, []Op) {
 			if err != nil {
 				panic(d)
 			}
-			op = Op{
+			rule = Rule{
 				variable: string(r[0]),
-				eq:       string(r[1]),
+				op:       string(r[1]),
 				value:    d,
 				next:     r[semi+1:],
 			}
 		}
-		ops = append(ops, op)
+		workflow = append(workflow, rule)
 	}
-	return name, ops
+	return name, workflow
 }
 
 func newWorkflows(in string) map[string]Workflow {
 	workflows := make(map[string]Workflow, 0)
 	for _, line := range strings.Fields(in) {
-		name, ops := newRule(line)
-		workflows[name] = ops
+		name, workflow := newWorkflow(line)
+		workflows[name] = workflow
 	}
 	return workflows
 }
@@ -159,12 +166,12 @@ func solvePart2(input []byte) string {
 		panic("unexpected input")
 	}
 	workflows := newWorkflows(values[0])
-	log.Debug("Rules:")
+	log.Debug("Workflows:")
 	for k, v := range workflows {
 		log.Debug(k, v)
 	}
 	log.Debug("\n")
-	sets := map[string]image.Point{
+	sets := map[string]Range{
 		"x": {1, 4000},
 		"s": {1, 4000},
 		"a": {1, 4000},
@@ -173,46 +180,46 @@ func solvePart2(input []byte) string {
 	return strconv.Itoa(evaluateRanges(workflows, "in", sets))
 }
 
-func evaluateRanges(workflows map[string]Workflow, n string, limits map[string]image.Point) int {
+func evaluateRanges(workflows map[string]Workflow, n string, ranges map[string]Range) int {
 	switch n {
 	case "A":
-		c := 1
-		for _, cc := range limits {
-			c *= cc.Y - cc.X + 1
+		value := 1
+		for _, rn := range ranges {
+			value *= rn.Len()
 		}
-		log.Debug("accepted range: ", limits, " value:", c)
-		return c
+		log.Debug("accepted range: ", ranges, " value:", value)
+		return value
 	case "R":
 		return 0
 	}
-	in := workflows[n]
-	s := 0
-	sets := deepClone(limits)
-	for _, op := range in {
-		switch op.eq {
+	workflow := workflows[n]
+	sum := 0
+	ranges = deepClone(ranges)
+	for _, rule := range workflow {
+		switch rule.op {
 		case ">":
-			ov := sets[op.variable]
-			sets[op.variable] = image.Pt(op.value+1, ov.Y)
-			s += evaluateRanges(workflows, op.next, sets)
-			ov.Y = op.value
-			sets[op.variable] = ov
+			ov := ranges[rule.variable]
+			ranges[rule.variable] = Range{rule.value + 1, ov.Max}
+			sum += evaluateRanges(workflows, rule.next, ranges)
+			ov.Max = rule.value
+			ranges[rule.variable] = ov
 		case "<":
-			ov := sets[op.variable]
-			sets[op.variable] = image.Pt(ov.X, op.value-1)
-			s += evaluateRanges(workflows, op.next, sets)
-			ov.X = op.value
-			sets[op.variable] = ov
+			ov := ranges[rule.variable]
+			ranges[rule.variable] = Range{ov.Min, rule.value - 1}
+			sum += evaluateRanges(workflows, rule.next, ranges)
+			ov.Min = rule.value
+			ranges[rule.variable] = ov
 		default:
-			s += evaluateRanges(workflows, op.next, sets)
+			sum += evaluateRanges(workflows, rule.next, ranges)
 		}
 	}
-	return s
+	return sum
 }
 
-func deepClone(m map[string]image.Point) map[string]image.Point {
-	sets := map[string]image.Point{}
-	for k, v := range m {
-		sets[k] = image.Pt(v.X, v.Y)
+func deepClone(ranges map[string]Range) map[string]Range {
+	o := make(map[string]Range, len(ranges))
+	for k, v := range ranges {
+		o[k] = Range{v.Min, v.Max}
 	}
-	return sets
+	return o
 }
