@@ -263,7 +263,7 @@ func solvePart1(input []byte) string {
 	system.Init()
 
 	highCount, lowCount := 0, 0
-	for i := 0; i < 10000; i++ {
+	for i := 0; i < 1000; i++ {
 		pulses := system.PressButton()
 		highCount += pulses[high]
 		lowCount += pulses[low]
