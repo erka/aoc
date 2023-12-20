@@ -22,8 +22,3 @@ func TestSolvePart12(t *testing.T) {
 	result := solvePart1(example2)
 	require.Equal(t, "11687500", result)
 }
-
-// func TestSolvePart2(t *testing.T) {
-// 	result := solvePart2(example1)
-// 	require.Equal(t, "0", result)
-// }

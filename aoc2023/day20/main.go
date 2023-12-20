@@ -91,22 +91,14 @@ func (m *Conjunction) AddInput(name string) {
 	m.recent[name] = low
 }
 
-func (m *Conjunction) signal() pulse {
-	allHigh := true
-	for _, r := range m.recent {
-		if r != high {
-			allHigh = false
-		}
-	}
-	if allHigh {
-		return low
-	}
-	return high
-}
-
 func (m *Conjunction) Emit(from string, p pulse) ([]string, pulse) {
 	m.recent[from] = p
-	return m.outputs, m.signal()
+	for _, r := range m.recent {
+		if r != high {
+			return m.outputs, high
+		}
+	}
+	return m.outputs, low
 }
 
 type Broadcaster struct {
