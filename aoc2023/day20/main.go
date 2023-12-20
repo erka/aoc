@@ -138,9 +138,10 @@ type Step struct {
 }
 
 type System struct {
-	modules map[string]Emiter
-	on      bool
-	tracer  func(from string, p pulse, to string)
+	modules   map[string]Emiter
+	on        bool
+	btnClicks int
+	tracer    func(cnt int, from string, p pulse, to string)
 }
 
 func (s *System) Init() {
@@ -159,28 +160,24 @@ func (s *System) On() bool {
 	return s.on
 }
 
-func (s *System) PressButton() map[pulse]int {
-	return s.Pulse(Step{"button", []string{"broadcaster"}, low})
+func (s *System) PressButton() {
+	s.btnClicks += 1
+	s.Pulse(Step{"button", []string{"broadcaster"}, low})
 }
 
-func (s *System) Trace(from string, p pulse, to string) {
+func (s *System) trace(from string, p pulse, to string) {
 	if s.tracer != nil {
-		s.tracer(from, p, to)
+		s.tracer(s.btnClicks, from, p, to)
 	}
 }
 
-func (s *System) Pulse(step Step) map[pulse]int {
-	pulses := map[pulse]int{
-		low:  0,
-		high: 0,
-	}
+func (s *System) Pulse(step Step) {
 	q := Queue[Step]{}
 	q.Push(step)
 	for q.Len() > 0 {
 		current := q.Shift()
 		for _, moduleName := range current.to {
-			s.Trace(current.from, current.p, moduleName)
-			pulses[current.p] += 1
+			s.trace(current.from, current.p, moduleName)
 			if m, ok := s.modules[moduleName]; ok {
 				nextTo, nextP := m.Emit(current.from, current.p)
 				q.Push(Step{moduleName, nextTo, nextP})
@@ -192,7 +189,6 @@ func (s *System) Pulse(step Step) map[pulse]int {
 			}
 		}
 	}
-	return pulses
 }
 
 func createSystem(input []byte) *System {
@@ -256,20 +252,19 @@ func createSystem(input []byte) *System {
 
 // solve
 func solvePart1(input []byte) string {
+	pulses := map[pulse]int{low: 0, high: 0}
 	system := createSystem(input)
-	system.tracer = func(from string, p pulse, to string) {
+	system.tracer = func(_ int, from string, p pulse, to string) {
 		log.Debugf("%s [%s] -> %s", from, p, to)
+		pulses[p] += 1
 	}
 	system.Init()
 
-	highCount, lowCount := 0, 0
-	for i := 0; i < 1000; i++ {
-		pulses := system.PressButton()
-		highCount += pulses[high]
-		lowCount += pulses[low]
+	for i := 0; i < 1000; i += 1 {
+		system.PressButton()
 	}
-	log.Debugf("high: %s, lowCount: %s", highCount, lowCount)
-	return strconv.Itoa(highCount * lowCount)
+	log.Debugf("high: %s, low: %s", pulses[high], pulses[low])
+	return strconv.Itoa(pulses[high] * pulses[low])
 }
 
 // solve
@@ -278,20 +273,15 @@ func solvePart2(input []byte) string {
 	system.Init()
 	inputs := system.modules[system.modules["rx"].Inputs()[0]].Inputs()
 	seen := map[string]int{}
-	system.tracer = func(from string, p pulse, to string) {
+	system.tracer = func(cnt int, from string, p pulse, _ string) {
 		if slices.Contains(inputs, from) && p == high {
 			if _, ok := seen[from]; !ok {
-				seen[from] = -1
+				seen[from] = cnt
 			}
 		}
 	}
-	for i := 1; len(seen) != len(inputs); i++ {
+	for len(seen) != len(inputs) {
 		system.PressButton()
-		for k, s := range seen {
-			if s == -1 {
-				seen[k] = i
-			}
-		}
 	}
 	values := lo.Values(seen)
 	return strconv.Itoa(mathx.LCM(values[0], values[1], values[2:]...))
