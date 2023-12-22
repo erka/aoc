@@ -64,15 +64,19 @@ func NewLogger(level string) *zap.SugaredLogger {
 
 func Debug(args ...any) {
 	DefaultLogger().Debug(args...)
+	DefaultLogger().Sync()
 }
 func Debugf(template string, args ...any) {
 	DefaultLogger().Debugf(template, args...)
+	DefaultLogger().Sync()
 }
 func Info(args ...any) {
 	DefaultLogger().Info(args...)
+	DefaultLogger().Sync()
 }
 func Infof(template string, args ...any) {
 	DefaultLogger().Infof(template, args...)
+	DefaultLogger().Sync()
 }
 func Error(args ...any) {
 	DefaultLogger().Error(args...)
