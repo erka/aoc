@@ -15,8 +15,9 @@ import (
 var input []byte
 
 /*
-* part 1:
-* 17122 low
+* 17122 low - probably int64 overflow
+* part 1: 24627
+*
 * part 2:
  */
 func main() {

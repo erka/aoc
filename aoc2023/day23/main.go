@@ -8,8 +8,9 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/erka/aoc/aoc2023/day23/graph"
+	"github.com/erka/aoc/aoc2023/day23/depth"
 	"github.com/erka/aoc/pkg/log"
+	"gonum.org/v1/gonum/graph/simple"
 )
 
 //go:embed input.txt
@@ -66,13 +67,13 @@ func solve(input []byte, slopes bool) int {
 	log.Debugf("%v %v cols: %v rows: %v", start, end, cols, rows)
 	bounds := image.Rect(0, 0, cols, rows)
 
-	gr := graph.NewDirectedGraph()
+	g := simple.NewDirectedGraph()
 	for y, l := range grid {
 		for x, c := range l {
 			if c == '#' {
 				continue
 			}
-			gr.AddVertex(vertexID(image.Pt(x, y)))
+			g.AddNode(simple.Node(vertexID(image.Pt(x, y))))
 		}
 	}
 
@@ -97,7 +98,9 @@ func solve(input []byte, slopes bool) int {
 							continue
 						}
 					}
-					gr.AddEdge(vertexID(p), vertexID(q))
+					from, _ := g.NodeWithID(int64(vertexID(p)))
+					to, _ := g.NodeWithID(int64(vertexID(q)))
+					g.SetEdge(g.NewEdge(from, to))
 				}
 			}
 
@@ -105,7 +108,12 @@ func solve(input []byte, slopes bool) int {
 	}
 	// end
 	result := 0
-	graph.DFS(gr, vertexID(start), vertexID(end), func(depth int) {
+	s, _ := g.NodeWithID(int64(vertexID(start)))
+	e, _ := g.NodeWithID(int64(vertexID(end)))
+	log.Debug(s.ID(), e.ID())
+
+	bfs := &depth.DepthLast{}
+	bfs.WalkAll(g, s, e, func(depth int) {
 		if depth > result {
 			result = depth
 			log.Debug(depth)
