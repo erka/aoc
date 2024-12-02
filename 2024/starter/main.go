@@ -33,7 +33,7 @@ func solvePart1(input []byte) string {
 	for {
 		_, err = fmt.Fscanln(reader, &line)
 		if err != nil {
-			if errors.Is(err, io.EOF) {
+			if !errors.Is(err, io.EOF) {
 				return err.Error()
 			}
 			break
@@ -54,7 +54,7 @@ func solvePart2(input []byte) string {
 	for {
 		_, err = fmt.Fscanln(reader, &line)
 		if err != nil {
-			if errors.Is(err, io.EOF) {
+			if !errors.Is(err, io.EOF) {
 				return err.Error()
 			}
 			break

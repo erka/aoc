@@ -69,7 +69,7 @@ func readInput(input []byte) ([]int, []int, error) {
 	var lnums, rnums []int
 
 	for {
-		_, err := fmt.Fscanf(reader, "%d %d\n", &left, &right)
+		_, err := fmt.Fscan(reader, &left, &right)
 		if err != nil {
 			if !errors.Is(err, io.EOF) {
 				return nil, nil, err

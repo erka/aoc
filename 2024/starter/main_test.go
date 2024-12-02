@@ -19,3 +19,15 @@ func TestSolvePart2(t *testing.T) {
 	result := solvePart2(example)
 	require.Equal(t, "0", result)
 }
+
+func BenchmarkSolvePart1(b *testing.B) {
+	for i := 0; i < b.N; i++ {
+		solvePart1(input)
+	}
+}
+
+func BenchmarkSolvePart2(b *testing.B) {
+	for i := 0; i < b.N; i++ {
+		solvePart2(input)
+	}
+}

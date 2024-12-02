@@ -12,12 +12,12 @@ var example []byte
 
 func TestSolvePart1(t *testing.T) {
 	result := solvePart1(example)
-	require.Equal(t, "11", result)
+	require.Equal(t, "2", result)
 }
 
 func TestSolvePart2(t *testing.T) {
 	result := solvePart2(example)
-	require.Equal(t, "31", result)
+	require.Equal(t, "4", result)
 }
 
 func BenchmarkSolvePart1(b *testing.B) {
