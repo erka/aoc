@@ -15,7 +15,7 @@ var input []byte
 
 /*
 * part 1: 5409
-* part 2:
+* part 2: 2022
  */
 func main() {
 	log.Infof("part1: %s", solvePart1(input))
@@ -29,61 +29,51 @@ var (
 	west  = image.Pt(-1, 0)
 )
 
-type Guard struct {
-	dir  image.Point
-	pos  image.Point
-	path *simple.DirectedGraph
+func rightDir(dir image.Point) image.Point {
+	switch dir {
+	case north:
+		return east
+	case east:
+		return south
+	case south:
+		return west
+	case west:
+		return north
+	}
+	return north
 }
 
-func vertexID(p image.Point) int64 {
+type Guard struct {
+	dir image.Point
+	pos image.Point
+}
+
+func nodeId(p image.Point) int64 {
 	return int64(p.Y*1000 + p.X)
 }
 
 func (g *Guard) set(pos image.Point, dir image.Point) {
 	g.pos.X = pos.X
 	g.pos.Y = pos.Y
-	g.path.AddNode(simple.Node(vertexID(g.pos)))
 	g.dir = dir // go north
 }
 
-func (g *Guard) move(area [][]byte, boundary image.Rectangle) bool {
-	next := g.pos.Add(g.dir)
-	if !next.In(boundary) {
-		return false
-	}
+func (g *Guard) next() image.Point {
+	return g.pos.Add(g.dir)
+}
 
+func (g *Guard) move(area [][]byte) bool {
+	next := g.next()
 	if area[next.Y][next.X] == '#' {
 		g.turnRight()
-		return true
-	}
-	b := g.path.Node(vertexID(g.pos))
-	n := simple.Node(vertexID(next))
-	if g.path.Node(n.ID()) == nil {
-		g.path.AddNode(n)
-	}
-	if g.path.Edge(b.ID(), n.ID()) == nil {
-		g.path.NewEdge(b, n)
+		return false
 	}
 	g.pos = next
 	return true
 }
 
 func (g *Guard) turnRight() {
-	switch g.dir {
-	case north:
-		g.dir = east
-	case east:
-		g.dir = south
-	case south:
-		g.dir = west
-	case west:
-		g.dir = north
-	}
-}
-
-func (g *Guard) walk(area [][]byte, boundary image.Rectangle) {
-	for g.move(area, boundary) {
-	}
+	g.dir = rightDir(g.dir)
 }
 
 // solve
@@ -92,21 +82,27 @@ func solvePart1(input []byte) string {
 
 	boundary := image.Rect(0, 0, len(area), len(area[0]))
 
-	guard := &Guard{
-		path: simple.NewDirectedGraph(),
-	}
-
+	start := image.Pt(0, 0)
 	for y, line := range area {
 		for x, s := range line {
 			if s == '^' {
-				guard.set(image.Pt(x, y), north)
+				start = image.Pt(x, y)
 			}
 		}
 	}
 
-	guard.walk(area, boundary)
-
-	return strconv.Itoa(guard.path.Nodes().Len())
+	graph := simple.NewDirectedGraph()
+	guard := &Guard{}
+	guard.set(start, north)
+	nextPos := guard.next()
+	for nextPos.In(boundary) {
+		prevPos := guard.pos
+		if guard.move(area) {
+			graph.SetEdge(graph.NewEdge(simple.Node(nodeId(prevPos)), simple.Node(nodeId(guard.pos))))
+			nextPos = guard.next()
+		}
+	}
+	return strconv.Itoa(graph.Nodes().Len())
 }
 
 // solve
@@ -115,25 +111,58 @@ func solvePart2(input []byte) string {
 
 	boundary := image.Rect(0, 0, len(area), len(area[0]))
 
-	guard := &Guard{
-		path: simple.NewDirectedGraph(),
-	}
+	start := image.Pt(0, 0)
 
 	for y, line := range area {
 		for x, s := range line {
 			if s == '^' {
-				guard.set(image.Pt(x, y), north)
+				start = image.Pt(x, y)
 			}
 		}
 	}
-	guard.walk(area, boundary)
 
-	nodes := guard.path.Nodes()
-	for nodes.Next() {
-		node := nodes.Node()
-		y, x := node.ID()/1000, node.ID()%1000
-		log.Debug(node)
+	loops := map[image.Point]struct{}{}
+	graph := simple.NewDirectedGraph()
+	guard := &Guard{}
+	guard.set(start, north)
+	nextPos := guard.next()
+	for nextPos.In(boundary) {
+		prevPos := guard.pos
+		if guard.move(area) {
+			graph.SetEdge(graph.NewEdge(simple.Node(nodeId(prevPos)), simple.Node(nodeId(guard.pos))))
+		}
+		nextPos = guard.next()
+		if !nextPos.In(boundary) {
+			break
+		}
+
+		if area[nextPos.Y][nextPos.X] == '#' || area[nextPos.Y][nextPos.X] == '^' {
+			// skip if there is an obstacle or original start
+			continue
+		}
+		area[nextPos.Y][nextPos.X] = '#'
+		if detectLoop(start, boundary, area) {
+			loops[nextPos] = struct{}{}
+		}
+		area[nextPos.Y][nextPos.X] = '.'
 	}
+	return strconv.Itoa(len(loops))
+}
 
-	return strconv.Itoa(0)
+func detectLoop(start image.Point, boundary image.Rectangle, area [][]byte) bool {
+	graph := simple.NewDirectedGraph()
+	guard := &Guard{}
+	guard.set(start, north)
+	nextPos := guard.next()
+	for nextPos.In(boundary) {
+		prevPos := guard.pos
+		if guard.move(area) {
+			graph.SetEdge(graph.NewEdge(simple.Node(nodeId(prevPos)), simple.Node(nodeId(guard.pos))))
+		}
+		nextPos = guard.next()
+		if graph.HasEdgeFromTo(nodeId(guard.pos), nodeId(nextPos)) {
+			return true
+		}
+	}
+	return false
 }
