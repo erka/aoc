@@ -18,7 +18,7 @@ var input []byte
 
 /*
 * part 1: 270084
-* part 2:
+* part 2: 329431019997766
  */
 func main() {
 	log.Infof("part1: %s", solvePart1(input))
@@ -35,7 +35,7 @@ type ft struct {
 	t byte
 }
 
-var paths = map[ft][]byte{}
+var paths = map[ft][]string{}
 
 // the best path where there is smallest direction changes?
 
@@ -52,8 +52,6 @@ func setup(keypad keypad, edges []simple.Edge) {
 				continue
 			}
 			variants, _ := pt.AllTo(int64(nums[j]))
-			optimal := []byte{}
-			changes := math.MaxInt64
 			for _, nodes := range variants {
 				output := []byte{}
 				for jj := 0; jj < len(nodes)-1; jj++ {
@@ -61,18 +59,8 @@ func setup(keypad keypad, edges []simple.Edge) {
 					current := keypad[byte(nodes[jj].ID())]
 					output = append(output, symbols[next.Sub(current)])
 				}
-				ch := 0
-				for ii := 0; ii < len(output)-1; ii++ {
-					if output[ii] != output[ii+1] {
-						ch += 1
-					}
-				}
-				if ch < changes {
-					changes = ch
-					optimal = output
-				}
+				paths[ft{f: n, t: nums[j]}] = append(paths[ft{f: n, t: nums[j]}], string(output)+"A")
 			}
-			paths[ft{f: n, t: nums[j]}] = append(optimal, 'A')
 		}
 	}
 }
@@ -153,7 +141,16 @@ func sequence(line []byte, times int) int {
 	current := byte('A')
 	length := 0
 	for _, next := range line {
-		length += sequence([]byte(paths[ft{f: current, t: next}]), times-1)
+		minimal := math.MaxInt
+		if len(paths[ft{f: current, t: next}]) == 0 {
+			length += 1
+			continue
+		}
+		for _, variant := range paths[ft{f: current, t: next}] {
+			d := sequence([]byte(variant), times-1)
+			minimal = min(minimal, d)
+		}
+		length += minimal
 		current = next
 	}
 	cache[key] = length

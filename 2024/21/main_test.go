@@ -17,7 +17,7 @@ func TestSolvePart1(t *testing.T) {
 
 func TestSolvePart2(t *testing.T) {
 	result := solvePart2(example)
-	require.Equal(t, "0", result)
+	require.Equal(t, "154115708116294", result)
 }
 
 func BenchmarkSolvePart1(b *testing.B) {
