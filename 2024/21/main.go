@@ -3,15 +3,12 @@ package main
 import (
 	"bytes"
 	_ "embed"
-	"errors"
-	"fmt"
 	"image"
-	"io"
 	"math"
 	"strconv"
 
 	"github.com/erka/aoc/pkg/log"
-	"gonum.org/v1/gonum/graph"
+	"github.com/samber/lo"
 	"gonum.org/v1/gonum/graph/path"
 	"gonum.org/v1/gonum/graph/simple"
 )
@@ -26,6 +23,58 @@ var input []byte
 func main() {
 	log.Infof("part1: %s", solvePart1(input))
 	log.Infof("part2: %s", solvePart2(input))
+}
+
+func init() {
+	setup(numericKeypad, numericEdges)
+	setup(directionalKeypad, directionEdges)
+}
+
+type ft struct {
+	f byte
+	t byte
+}
+
+var paths = map[ft][]byte{}
+
+// the best path where there is smallest direction changes?
+
+func setup(keypad keypad, edges []simple.Edge) {
+	g := simple.NewUndirectedGraph()
+	for _, e := range edges {
+		g.SetEdge(e)
+	}
+	nums := lo.Keys(keypad)
+	for _, n := range nums {
+		pt := path.DijkstraAllFrom(simple.Node(n), g)
+		for j := range nums {
+			if n == nums[j] {
+				continue
+			}
+			variants, _ := pt.AllTo(int64(nums[j]))
+			optimal := []byte{}
+			changes := math.MaxInt64
+			for _, nodes := range variants {
+				output := []byte{}
+				for jj := 0; jj < len(nodes)-1; jj++ {
+					next := keypad[byte(nodes[jj+1].ID())]
+					current := keypad[byte(nodes[jj].ID())]
+					output = append(output, symbols[next.Sub(current)])
+				}
+				ch := 0
+				for ii := 0; ii < len(output)-1; ii++ {
+					if output[ii] != output[ii+1] {
+						ch += 1
+					}
+				}
+				if ch < changes {
+					changes = ch
+					optimal = output
+				}
+			}
+			paths[ft{f: n, t: nums[j]}] = append(optimal, 'A')
+		}
+	}
 }
 
 type keypad map[byte]image.Point
@@ -57,7 +106,6 @@ var symbols = map[image.Point]byte{
 	image.Pt(-1, 0): '>',
 	image.Pt(0, 1):  '^',
 	image.Pt(0, -1): 'v',
-	image.Pt(0, 0):  'A',
 }
 
 var directionEdges = []simple.Edge{
@@ -86,64 +134,30 @@ var numericEdges = []simple.Edge{
 	{F: simple.Node('8'), T: simple.Node('9')},
 }
 
-func sequence(line []byte, keypad map[byte]image.Point, times int) [][]byte {
-	edges := directionEdges
-	if len(keypad) == len(numericKeypad) {
-		edges = numericEdges
+var cache = map[string]int{}
+
+func sequence(line []byte, times int) int {
+	if len(line) == 0 {
+		return 1
 	}
-	g := simple.NewUndirectedGraph()
-	for _, e := range edges {
-		g.SetEdge(e)
+	if times == 0 {
+		return len(line)
+	}
+
+	key := string(line) + strconv.Itoa(times)
+	if v, ok := cache[key]; ok {
+		return v
 	}
 
 	// start with A
-	variants := findAll(line, byte('A'), g)
-
-	output := make([][]byte, len(variants))
-	for i, nodes := range variants {
-		for j := 0; j < len(nodes)-1; j++ {
-			next := keypad[byte(nodes[j+1].ID())]
-			current := keypad[byte(nodes[j].ID())]
-			output[i] = append(output[i], symbols[next.Sub(current)])
-		}
+	current := byte('A')
+	length := 0
+	for _, next := range line {
+		length += sequence([]byte(paths[ft{f: current, t: next}]), times-1)
+		current = next
 	}
-	times -= 1
-	if times == 0 {
-		return output
-	}
-
-	next := [][]byte{}
-	for _, mv := range output {
-		key := fmt.Sprintf("%s/%d", mv, times)
-		values, ok := cache[key]
-		if !ok {
-			values = sequence(mv, keypad, times)
-			cache[key] = values
-		}
-
-		next = append(next, values...)
-	}
-	return next
-}
-
-var cache = map[string][][]byte{}
-
-func findAll(line []byte, start byte, g *simple.UndirectedGraph) [][]graph.Node {
-	o := [][]graph.Node{}
-	if len(line) == 0 {
-		o := append(o, []graph.Node{simple.Node(start)})
-		return o
-	}
-	c := line[0]
-	pt := path.DijkstraAllFrom(simple.Node(start), g)
-	all, _ := pt.AllTo(int64(c))
-	for _, a := range all {
-		values := findAll(line[1:], c, g)
-		for _, x := range values {
-			o = append(o, append(a, x...))
-		}
-	}
-	return o
+	cache[key] = length
+	return length
 }
 
 // solve
@@ -151,14 +165,7 @@ func solvePart1(input []byte) string {
 	lines := bytes.Split(bytes.Trim(input, "\n"), []byte("\n"))
 	output := 0
 	for _, line := range lines {
-		variants := sequence(line, numericKeypad, 1)
-		l := math.MaxInt64
-		for _, v := range variants {
-			seconds := sequence(v, directionalKeypad, 2)
-			for _, s := range seconds {
-				l = min(l, len(s))
-			}
-		}
+		l := sequence(line, 3)
 		n, _ := strconv.Atoi(string(line)[:3])
 		output += l * n
 	}
@@ -167,21 +174,12 @@ func solvePart1(input []byte) string {
 
 // solve
 func solvePart2(input []byte) string {
-	reader := bytes.NewReader(input)
-	var (
-		line string
-		err  error
-	)
-	for {
-		_, err = fmt.Fscanln(reader, &line)
-		if err != nil {
-			if !errors.Is(err, io.EOF) {
-				return err.Error()
-			}
-			break
-		}
-		log.Debug(line)
+	lines := bytes.Split(bytes.Trim(input, "\n"), []byte("\n"))
+	output := 0
+	for _, line := range lines {
+		l := sequence(line, 26)
+		n, _ := strconv.Atoi(string(line)[:3])
+		output += l * n
 	}
-
-	return strconv.Itoa(0)
+	return strconv.Itoa(output)
 }
