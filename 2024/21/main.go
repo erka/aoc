@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	_ "embed"
+	"fmt"
 	"image"
 	"math"
 	"strconv"
@@ -27,7 +28,7 @@ func main() {
 
 func init() {
 	setup(numericKeypad, numericEdges)
-	setup(directionalKeypad, directionEdges)
+	setup(directionalKeypad, directionalEdges)
 }
 
 type ft struct {
@@ -49,6 +50,7 @@ func setup(keypad keypad, edges []simple.Edge) {
 		pt := path.DijkstraAllFrom(simple.Node(n), g)
 		for j := range nums {
 			if n == nums[j] {
+				paths[ft{f: n, t: nums[j]}] = []string{"A"}
 				continue
 			}
 			variants, _ := pt.AllTo(int64(nums[j]))
@@ -96,7 +98,7 @@ var symbols = map[image.Point]byte{
 	image.Pt(0, -1): 'v',
 }
 
-var directionEdges = []simple.Edge{
+var directionalEdges = []simple.Edge{
 	{F: simple.Node('A'), T: simple.Node('>')},
 	{F: simple.Node('A'), T: simple.Node('^')},
 	{F: simple.Node('^'), T: simple.Node('v')},
@@ -124,15 +126,12 @@ var numericEdges = []simple.Edge{
 
 var cache = map[string]int{}
 
-func sequence(line []byte, times int) int {
-	if len(line) == 0 {
-		return 1
-	}
+func sequenceComplexity(line []byte, times int) int {
 	if times == 0 {
 		return len(line)
 	}
 
-	key := string(line) + strconv.Itoa(times)
+	key := fmt.Sprintf("%s#%d", line, times)
 	if v, ok := cache[key]; ok {
 		return v
 	}
@@ -142,12 +141,8 @@ func sequence(line []byte, times int) int {
 	length := 0
 	for _, next := range line {
 		minimal := math.MaxInt
-		if len(paths[ft{f: current, t: next}]) == 0 {
-			length += 1
-			continue
-		}
 		for _, variant := range paths[ft{f: current, t: next}] {
-			d := sequence([]byte(variant), times-1)
+			d := sequenceComplexity([]byte(variant), times-1)
 			minimal = min(minimal, d)
 		}
 		length += minimal
@@ -162,7 +157,7 @@ func solvePart1(input []byte) string {
 	lines := bytes.Split(bytes.Trim(input, "\n"), []byte("\n"))
 	output := 0
 	for _, line := range lines {
-		l := sequence(line, 3)
+		l := sequenceComplexity(line, 3)
 		n, _ := strconv.Atoi(string(line)[:3])
 		output += l * n
 	}
@@ -174,7 +169,7 @@ func solvePart2(input []byte) string {
 	lines := bytes.Split(bytes.Trim(input, "\n"), []byte("\n"))
 	output := 0
 	for _, line := range lines {
-		l := sequence(line, 26)
+		l := sequenceComplexity(line, 26)
 		n, _ := strconv.Atoi(string(line)[:3])
 		output += l * n
 	}
