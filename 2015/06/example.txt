@@ -1,0 +1,3 @@
+turn on 877,32 through 978,815
+turn off 950,438 through 974,746
+toggle 426,30 through 609,917
