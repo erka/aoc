@@ -1,0 +1,2 @@
+Sue 100: cars: 2, perfumes: 1, goldfish: 5
+Sue 200: trees: 8, perfumes: 1, cars: 2
