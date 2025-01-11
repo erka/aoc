@@ -28,3 +28,11 @@ Some days were easy and I had time to do `go` and `rust` variants. It was great 
 My 2011 macbook is still good enough to do it while day 23 run more than one hour to compute the second part. Christopher's 10 minutes was a good advice that sometimes it's easier to wait. It isn't optimal but it works.
 
 It was cool to see how people use `graphviz` to research the solution. It's easy to use and fun.
+
+## 2015 Reflections
+
+<p align="center" width="100%">
+    <img width="33%" src="./2015/banner.png?raw=true" alt="aoc 2015 banner">
+</p>
+
+Reflecting on the 10th Advent of Code, I decided to revisit and solve the challenges from the first event in 2024/2025. It was fascinating to explore those early problems and witness how it all began. The RPG simulator provided an enjoyable manual-solving experience, while the wizard simulator seamlessly continued the game-themed puzzles. However, I find myself wishing for a more detailed description of Santa's sleigh in the day 24 challenge.
