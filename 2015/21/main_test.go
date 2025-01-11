@@ -12,7 +12,7 @@ var example []byte
 
 func TestSolvePart1(t *testing.T) {
 	result := solvePart1(example)
-	require.Equal(t, "0", result)
+	require.Equal(t, "8", result)
 }
 
 func TestSolvePart2(t *testing.T) {
