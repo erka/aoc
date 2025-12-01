@@ -1,14 +1,12 @@
 package main
 
 import (
-	"bytes"
 	_ "embed"
-	"errors"
-	"fmt"
-	"io"
+	"log/slog"
 	"strconv"
 
-	"github.com/erka/aoc/pkg/log"
+	"github.com/erka/aoc/pkg/iox"
+	_ "github.com/erka/aoc/pkg/xslog"
 )
 
 //go:embed input.txt
@@ -19,29 +17,21 @@ var input []byte
 * part 2: 6099
  */
 func main() {
-	log.Infof("part1: %s", solvePart1(input))
-	log.Infof("part2: %s", solvePart2(input))
+	slog.Info("part1", slog.String("value", solvePart1(input)))
+	slog.Info("part2", slog.String("value", solvePart2(input)))
 }
 
 // solve
 func solvePart1(input []byte) string {
-	reader := bytes.NewReader(input)
 	var (
-		line     string
-		err      error
 		counter  int
 		position = 50
 		ticks    int
+		err      error
 	)
-	for {
-		_, err = fmt.Fscanln(reader, &line)
-		if err != nil {
-			if !errors.Is(err, io.EOF) {
-				return err.Error()
-			}
-			break
-		}
 
+	for line := range iox.Lines(input) {
+		slog.Debug(line)
 		ticks, err = strconv.Atoi(line[1:])
 		if err != nil {
 			return err.Error()
@@ -60,22 +50,14 @@ func solvePart1(input []byte) string {
 
 // solve
 func solvePart2(input []byte) string {
-	reader := bytes.NewReader(input)
 	var (
-		line     string
 		err      error
 		counter  int
 		position = 50
 		ticks    int
 	)
-	for {
-		_, err = fmt.Fscanln(reader, &line)
-		if err != nil {
-			if !errors.Is(err, io.EOF) {
-				return err.Error()
-			}
-			break
-		}
+
+	for line := range iox.Lines(input) {
 		ticks, err = strconv.Atoi(line[1:])
 		if err != nil {
 			return err.Error()
