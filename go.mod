@@ -1,6 +1,6 @@
 module github.com/erka/aoc
 
-go 1.23.3
+go 1.25.4
 
 require (
 	github.com/samber/lo v1.47.0

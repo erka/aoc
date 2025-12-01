@@ -1,0 +1,2 @@
+create day:
+    cp -r starter {{day}}
