@@ -1,4 +1,6 @@
 target
 .DS_Store
 
+*/**/out.ps
+*/**/graph.dot
 */**/input*.txt
